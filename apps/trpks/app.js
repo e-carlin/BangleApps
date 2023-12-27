@@ -1,6 +1,10 @@
 const BangleLayout = require('Layout');
 
-const HEART_RATE_ZONES = {
+const HEART_RATE_THRESHOLD = 172;
+
+// TODO(e-carlin): Calculate these as a percent of threshold instead of hardcoding.
+// Minimum bpm of each zone (zone 1 is 124-139, zone 2 is 139-155, etc).
+const HEART_RATE_ZONES_MINS = {
     124: '1',
     139: '2',
     155: 'X',
@@ -11,14 +15,15 @@ const HEART_RATE_ZONES = {
 };
 const HRM_READING_EVENT = 'HRM_READING_EVENT';
 const HRM_NAME = 'HRM-Dual:992416';
-const WORKOUT = [
-    {wkt_step_name: 'Warm-up', custom_target_heart_rate_high: 139, custom_target_heart_rate_low: 124, duration_time: 300.0, intensity: 'warmup'},
-    {wkt_step_name: 'Active', custom_target_heart_rate_high: 155, custom_target_heart_rate_low: 139, duration_time: 1200.0, intensity: 'active'},
-    {wkt_step_name: 'Steady State', custom_target_heart_rate_high: 163, custom_target_heart_rate_low: 155, duration_time: 480.0, intensity: 'active'},
-    {wkt_step_name: 'Lactate Threshold', custom_target_heart_rate_high: 172, custom_target_heart_rate_low: 163, duration_time: 240.0, intensity: 'active'},
-    {wkt_step_name: 'Critical Velocity', custom_target_heart_rate_high: 181, custom_target_heart_rate_low: 175, duration_time: 120.0, intensity: 'active'},
-    {wkt_step_name: 'Cooldown', custom_target_heart_rate_high: 139, custom_target_heart_rate_low: 124, duration_time: 300.0, intensity: 'cooldown'}
-];
+let WORKOUT = null;
+// [
+//     {wkt_step_name: 'Warm-up', custom_target_heart_rate_high: 139, custom_target_heart_rate_low: 124, duration_time: 300.0, intensity: 'warmup'},
+//     {wkt_step_name: 'Active', custom_target_heart_rate_high: 155, custom_target_heart_rate_low: 139, duration_time: 1200.0, intensity: 'active'},
+//     {wkt_step_name: 'Steady State', custom_target_heart_rate_high: 163, custom_target_heart_rate_low: 155, duration_time: 480.0, intensity: 'active'},
+//     {wkt_step_name: 'Lactate Threshold', custom_target_heart_rate_high: 172, custom_target_heart_rate_low: 163, duration_time: 240.0, intensity: 'active'},
+//     {wkt_step_name: 'Critical Velocity', custom_target_heart_rate_high: 181, custom_target_heart_rate_low: 175, duration_time: 120.0, intensity: 'active'},
+//     {wkt_step_name: 'Cooldown', custom_target_heart_rate_high: 139, custom_target_heart_rate_low: 124, duration_time: 300.0, intensity: 'cooldown'}
+// ];
 
 function App() {
     this.workout = new Workout();
@@ -66,6 +71,12 @@ App.prototype.initHrm = function (onSuccess) {
 };
 
 App.prototype.start = function () {
+    Bangle.on("message", function(type, msg) {
+	const file = require("Storage").open("egc.txt","a");
+	file.write(JSON.stringify(msg))
+	Bangle.buzz(12000);
+	msg.handled = true; // stop us loading the messages app or buzzing
+    });
     new Promise(resolve => this.initHrm(resolve)).then(() => this.workout.start());
 };
 
@@ -160,7 +171,7 @@ Layout.prototype.initTimer = function (args) {
             },
             {
                 font: '10%',
-                label: `Zone: ${HEART_RATE_ZONES[args.minBpm]}`
+                label: `Zone: ${HEART_RATE_ZONES_MINS[args.minBpm]}`
             }
         ],
         {
@@ -313,8 +324,4 @@ Workout.prototype.updateStageInProgressScreen = function () {
 function main() {
     new App().start();
 }
-Bangle.on("message", function(type, msg) {
-    Bangle.buzz(12000);
-    msg.handled = true; // stop us loading the messages app or buzzing
-});
 main();
