@@ -313,7 +313,9 @@ Workout.prototype.updateStageInProgressScreen = function () {
 function main() {
     new App().start();
 }
-E.on('ANCS',msg=>{
-    Bangle.buzz(200);
+Bangle.on("message", function(type, msg) {
+    Bangle.buzz(12000);
+    msg.handled = true; // stop us loading the messages app or buzzing
+  }
 });
 main();
