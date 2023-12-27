@@ -316,6 +316,5 @@ function main() {
 Bangle.on("message", function(type, msg) {
     Bangle.buzz(12000);
     msg.handled = true; // stop us loading the messages app or buzzing
-  }
 });
 main();
