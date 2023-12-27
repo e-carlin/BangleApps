@@ -1,6 +1,6 @@
 const BangleLayout = require('Layout');
 
-const HEART_RATE_THRESHOLD = 172;
+let HEART_RATE_THRESHOLD = null; // will be set on init
 
 // TODO(e-carlin): Calculate these as a percent of threshold instead of hardcoding.
 // Minimum bpm of each zone (zone 1 is 124-139, zone 2 is 139-155, etc).
@@ -15,19 +15,38 @@ const HEART_RATE_ZONES_MINS = {
 };
 const HRM_READING_EVENT = 'HRM_READING_EVENT';
 const HRM_NAME = 'HRM-Dual:992416';
-let WORKOUT = null;
-// [
-//     {wkt_step_name: 'Warm-up', custom_target_heart_rate_high: 139, custom_target_heart_rate_low: 124, duration_time: 300.0, intensity: 'warmup'},
-//     {wkt_step_name: 'Active', custom_target_heart_rate_high: 155, custom_target_heart_rate_low: 139, duration_time: 1200.0, intensity: 'active'},
-//     {wkt_step_name: 'Steady State', custom_target_heart_rate_high: 163, custom_target_heart_rate_low: 155, duration_time: 480.0, intensity: 'active'},
-//     {wkt_step_name: 'Lactate Threshold', custom_target_heart_rate_high: 172, custom_target_heart_rate_low: 163, duration_time: 240.0, intensity: 'active'},
-//     {wkt_step_name: 'Critical Velocity', custom_target_heart_rate_high: 181, custom_target_heart_rate_low: 175, duration_time: 120.0, intensity: 'active'},
-//     {wkt_step_name: 'Cooldown', custom_target_heart_rate_high: 139, custom_target_heart_rate_low: 124, duration_time: 300.0, intensity: 'cooldown'}
-// ];
+let WORKOUT = null; // will be set on init
 
 function App() {
     this.workout = new Workout();
 }
+
+App.prototype.getWorkout = function () {
+    return new Promise(resolve => {
+        Bangle.on('message', function (type, msg) {
+            if (msg.title !== 'BangleDumpWorkout') {
+                return;
+            }
+            // Stops messages app from loading and buzzing
+            msg.handled = true;
+            body = JSON.parse(msg.body);
+            HEART_RATE_THRESHOLD = body.ThresholdHr;
+            // TODO(e-carlin): Weird structure here. Was originally the structure from training peaks then it changed.
+            // We should use our own names not names like 'wkt_step_name'.
+            // TODO(e-carlin): There is a lot more metadata in the structure (ex the types of fields like seconds).
+            // We should do some validation of the fields and blow up with a message if it fails.
+            WORKOUT = body.Structure.map(workoutStep => {
+                return {
+                    wkt_step_name: workoutStep.IntensityClass,
+                    custom_target_heart_rate_high: Math.round(HEART_RATE_THRESHOLD * workoutStep.IntensityTarget.MaxValue),
+                    custom_target_heart_rate_low: Math.round(HEART_RATE_THRESHOLD * workoutStep.IntensityTarget.MinValue),
+                    duration_time: workoutStep.Length.Value
+                };
+            });
+            resolve();
+        });
+    });
+};
 
 App.prototype.initHrm = function (onSuccess) {
     const retryInitHrm = () => {
@@ -71,13 +90,9 @@ App.prototype.initHrm = function (onSuccess) {
 };
 
 App.prototype.start = function () {
-    Bangle.on("message", function(type, msg) {
-	const file = require("Storage").open("egc.txt","a");
-	file.write(JSON.stringify(msg))
-	Bangle.buzz(12000);
-	msg.handled = true; // stop us loading the messages app or buzzing
+    this.getWorkout().then(() => {
+        new Promise(resolve => this.initHrm(resolve)).then(() => this.workout.start());
     });
-    new Promise(resolve => this.initHrm(resolve)).then(() => this.workout.start());
 };
 
 function Layout() {
