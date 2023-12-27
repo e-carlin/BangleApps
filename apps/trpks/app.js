@@ -90,9 +90,16 @@ App.prototype.initHrm = function (onSuccess) {
 };
 
 App.prototype.start = function () {
-    this.getWorkout().then(() => {
-        new Promise(resolve => this.initHrm(resolve)).then(() => this.workout.start());
-    });
+    this.getWorkout()
+        .then(() => {
+            Bangle.buzz(100);
+            // new Promise(resolve => this.initHrm(resolve)).then(() => this.workout.start());
+        })
+        .catch(err => {
+            Bangle.buzz(2000);
+            var file = require('Storage').open('egc.txt', 'a');
+            file.write(`error=${err}`);
+        });
 };
 
 function Layout() {
