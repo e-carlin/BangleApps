@@ -24,26 +24,27 @@ function App() {
 App.prototype.getWorkout = function () {
     return new Promise(resolve => {
         Bangle.on('message', function (type, msg) {
-            if (msg.title !== 'BangleDumpWorkout') {
-                return;
-            }
-            // Stops messages app from loading and buzzing
-            msg.handled = true;
-            body = JSON.parse(msg.body);
-            HEART_RATE_THRESHOLD = body.ThresholdHr;
-            // TODO(e-carlin): Weird structure here. Was originally the structure from training peaks then it changed.
-            // We should use our own names not names like 'wkt_step_name'.
-            // TODO(e-carlin): There is a lot more metadata in the structure (ex the types of fields like seconds).
-            // We should do some validation of the fields and blow up with a message if it fails.
-            WORKOUT = body.Structure.map(workoutStep => {
-                return {
-                    wkt_step_name: workoutStep.IntensityClass,
-                    custom_target_heart_rate_high: Math.round(HEART_RATE_THRESHOLD * workoutStep.IntensityTarget.MaxValue),
-                    custom_target_heart_rate_low: Math.round(HEART_RATE_THRESHOLD * workoutStep.IntensityTarget.MinValue),
-                    duration_time: workoutStep.Length.Value
-                };
-            });
-            resolve();
+            Bangle.buzz(10000);
+            // if (msg.title !== 'BangleDumpWorkout') {
+            //     return;
+            // }
+            // // Stops messages app from loading and buzzing
+            // msg.handled = true;
+            // body = JSON.parse(msg.body);
+            // HEART_RATE_THRESHOLD = body.ThresholdHr;
+            // // TODO(e-carlin): Weird structure here. Was originally the structure from training peaks then it changed.
+            // // We should use our own names not names like 'wkt_step_name'.
+            // // TODO(e-carlin): There is a lot more metadata in the structure (ex the types of fields like seconds).
+            // // We should do some validation of the fields and blow up with a message if it fails.
+            // WORKOUT = body.Structure.map(workoutStep => {
+            //     return {
+            //         wkt_step_name: workoutStep.IntensityClass,
+            //         custom_target_heart_rate_high: Math.round(HEART_RATE_THRESHOLD * workoutStep.IntensityTarget.MaxValue),
+            //         custom_target_heart_rate_low: Math.round(HEART_RATE_THRESHOLD * workoutStep.IntensityTarget.MinValue),
+            //         duration_time: workoutStep.Length.Value
+            //     };
+            // });
+            // resolve();
         });
     });
 };
@@ -346,4 +347,9 @@ Workout.prototype.updateStageInProgressScreen = function () {
 function main() {
     new App().start();
 }
+// setTimeout(function () {
+//     Bangle.emit('message', 'foo', {
+// 	title: 'BangleDumpWorkout'
+//     });
+// }, 2000);
 main();
