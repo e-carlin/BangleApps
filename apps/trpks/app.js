@@ -11,7 +11,14 @@ const HEART_RATE_ZONES = {
 };
 const HRM_READING_EVENT = 'HRM_READING_EVENT';
 const HRM_NAME = 'HRM-Dual:992416';
-const WORKOUT = [{'wkt_step_name': 'Warm-up', 'custom_target_heart_rate_high': 139, 'custom_target_heart_rate_low': 124, 'duration_time': 300.0, 'intensity': 'warmup'}, {'wkt_step_name': 'Active', 'custom_target_heart_rate_high': 155, 'custom_target_heart_rate_low': 139, 'duration_time': 1200.0, 'intensity': 'active'}, {'wkt_step_name': 'Steady State', 'custom_target_heart_rate_high': 163, 'custom_target_heart_rate_low': 155, 'duration_time': 480.0, 'intensity': 'active'}, {'wkt_step_name': 'Lactate Threshold', 'custom_target_heart_rate_high': 172, 'custom_target_heart_rate_low': 163, 'duration_time': 240.0, 'intensity': 'active'}, {'wkt_step_name': 'Critical Velocity', 'custom_target_heart_rate_high': 181, 'custom_target_heart_rate_low': 175, 'duration_time': 120.0, 'intensity': 'active'}, {'wkt_step_name': 'Cooldown', 'custom_target_heart_rate_high': 139, 'custom_target_heart_rate_low': 124, 'duration_time': 300.0, 'intensity': 'cooldown'}];
+const WORKOUT = [
+    {wkt_step_name: 'Warm-up', custom_target_heart_rate_high: 139, custom_target_heart_rate_low: 124, duration_time: 300.0, intensity: 'warmup'},
+    {wkt_step_name: 'Active', custom_target_heart_rate_high: 155, custom_target_heart_rate_low: 139, duration_time: 1200.0, intensity: 'active'},
+    {wkt_step_name: 'Steady State', custom_target_heart_rate_high: 163, custom_target_heart_rate_low: 155, duration_time: 480.0, intensity: 'active'},
+    {wkt_step_name: 'Lactate Threshold', custom_target_heart_rate_high: 172, custom_target_heart_rate_low: 163, duration_time: 240.0, intensity: 'active'},
+    {wkt_step_name: 'Critical Velocity', custom_target_heart_rate_high: 181, custom_target_heart_rate_low: 175, duration_time: 120.0, intensity: 'active'},
+    {wkt_step_name: 'Cooldown', custom_target_heart_rate_high: 139, custom_target_heart_rate_low: 124, duration_time: 300.0, intensity: 'cooldown'}
+];
 
 function App() {
     this.workout = new Workout();
@@ -88,7 +95,7 @@ Layout.prototype.initNew = function (columns, buttons) {
                     font: c.font,
                     label: c.label,
                     // OPTIMIZATION: Make id optional. Only really necessary for
-		    // redrawLayout
+                    // redrawLayout
                     id: c.id || c.label
                 };
             })
@@ -140,12 +147,12 @@ Layout.prototype.initTimer = function (args) {
             {
                 font: '20%',
                 label: this.formatRemainingSeconds(args.remainingSeconds),
-		id: 'remainingSeconds'
+                id: 'remainingSeconds'
             },
             {
                 font: '20%',
                 label: args.currentBpm,
-		id: 'currentBpm'
+                id: 'currentBpm'
             },
             {
                 font: '10%',
@@ -209,7 +216,7 @@ function Workout() {
     this.currentStage = 0;
     this.remainingSeconds = 0;
     this.currentBpm = -1;
-    Bangle.on(HRM_READING_EVENT, (bpmReading) => this.onHrm(bpmReading));
+    Bangle.on(HRM_READING_EVENT, bpmReading => this.onHrm(bpmReading));
 }
 
 Workout.prototype.doCountdown = function () {
