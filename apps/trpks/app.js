@@ -24,10 +24,10 @@ function App() {
 App.prototype.getWorkout = function () {
     return new Promise(resolve => {
         Bangle.on('message', function (type, msg) {
-            Bangle.buzz(10000);
-            // if (msg.title !== 'BangleDumpWorkout') {
-            //     return;
-            // }
+            if (msg.title !== 'BangleDumpWorkout') {
+                return;
+            }
+            Bangle.buzz(8000);
             // // Stops messages app from loading and buzzing
             // msg.handled = true;
             // body = JSON.parse(msg.body);
