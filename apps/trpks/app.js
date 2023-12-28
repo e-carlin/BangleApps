@@ -27,24 +27,26 @@ App.prototype.getWorkout = function () {
             if (msg.title !== 'BangleDumpWorkout') {
                 return;
             }
-            Bangle.buzz(8000);
+	    require('Storage').open('egcmsg.txt', 'a').write(JSON.stringify(msg));
             // // Stops messages app from loading and buzzing
-            // msg.handled = true;
-            // body = JSON.parse(msg.body);
-            // HEART_RATE_THRESHOLD = body.ThresholdHr;
-            // // TODO(e-carlin): Weird structure here. Was originally the structure from training peaks then it changed.
-            // // We should use our own names not names like 'wkt_step_name'.
-            // // TODO(e-carlin): There is a lot more metadata in the structure (ex the types of fields like seconds).
-            // // We should do some validation of the fields and blow up with a message if it fails.
-            // WORKOUT = body.Structure.map(workoutStep => {
-            //     return {
-            //         wkt_step_name: workoutStep.IntensityClass,
-            //         custom_target_heart_rate_high: Math.round(HEART_RATE_THRESHOLD * workoutStep.IntensityTarget.MaxValue),
-            //         custom_target_heart_rate_low: Math.round(HEART_RATE_THRESHOLD * workoutStep.IntensityTarget.MinValue),
-            //         duration_time: workoutStep.Length.Value
-            //     };
-            // });
-            // resolve();
+            msg.handled = true;
+            body = JSON.parse(msg.body);
+            HEART_RATE_THRESHOLD = body.h;
+            // TODO(e-carlin): Weird structure here. Was originally the structure from training peaks then it changed.
+            // We should use our own names not names like 'custom_target_heart_rate_high'.
+            // TODO(e-carlin): There is a lot more metadata in the structure (ex the types of fields like seconds).
+            // We should do some validation of the fields and blow up with a message if it fails.
+            // But also, messages are limited to 4KB (maybe smaller?) in size which I've bumped against. So for now the body
+            // is as small as it can be.
+            WORKOUT = body.w.map(workoutStep => {
+                return {
+                    custom_target_heart_rate_high: Math.round(HEART_RATE_THRESHOLD * (workoutStep.l / 100)),
+                    custom_target_heart_rate_low: Math.round(HEART_RATE_THRESHOLD * (workoutStep.h / 100)),
+                    duration_time: workoutStep.s
+                };
+            });
+            Bangle.beep();
+            resolve();
         });
     });
 };
@@ -91,16 +93,9 @@ App.prototype.initHrm = function (onSuccess) {
 };
 
 App.prototype.start = function () {
-    this.getWorkout()
-        .then(() => {
-            Bangle.buzz(100);
-            // new Promise(resolve => this.initHrm(resolve)).then(() => this.workout.start());
-        })
-        .catch(err => {
-            Bangle.buzz(2000);
-            var file = require('Storage').open('egc.txt', 'a');
-            file.write(`error=${err}`);
-        });
+    this.getWorkout().then(() => {
+        new Promise(resolve => this.initHrm(resolve)).then(() => this.workout.start());
+    });
 };
 
 function Layout() {
@@ -177,7 +172,6 @@ Layout.prototype.initStartWorkout = function (startButtonPressedCb) {
 Layout.prototype.initTimer = function (args) {
     this.initNew(
         [
-            {font: '10%', label: args.workoutStageName},
             {
                 font: '20%',
                 label: this.formatRemainingSeconds(args.remainingSeconds),
@@ -288,7 +282,6 @@ Workout.prototype.doStateStageStart = function () {
     // Handle resuming a paused stage
     this.remainingSeconds = this.remainingSeconds <= 0 ? this.getWorkoutStageValue('duration_time') : this.remainingSeconds;
     this.layout.initTimer({
-        workoutStageName: this.getWorkoutStageValue('wkt_step_name'),
         remainingSeconds: this.remainingSeconds,
         minBpm: this.getWorkoutStageValue('custom_target_heart_rate_low'),
         maxBpm: this.getWorkoutStageValue('custom_target_heart_rate_high'),
@@ -347,9 +340,9 @@ Workout.prototype.updateStageInProgressScreen = function () {
 function main() {
     new App().start();
 }
-// setTimeout(function () {
-//     Bangle.emit('message', 'foo', {
-// 	title: 'BangleDumpWorkout'
-//     });
-// }, 2000);
+process.on('uncaughtException', function (e) {
+    require('Storage')
+        .open('trpkserror.txt', 'a')
+        .write(e, e.stack ? '\n' + e.stack : '');
+});
 main();
