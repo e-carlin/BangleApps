@@ -40,8 +40,8 @@ App.prototype.getWorkout = function () {
             // is as small as it can be.
             WORKOUT = body.w.map(workoutStep => {
                 return {
-                    custom_target_heart_rate_high: Math.round(HEART_RATE_THRESHOLD * (workoutStep.l / 100)),
-                    custom_target_heart_rate_low: Math.round(HEART_RATE_THRESHOLD * (workoutStep.h / 100)),
+                    custom_target_heart_rate_high: Math.round(HEART_RATE_THRESHOLD * (workoutStep.h / 100)),
+                    custom_target_heart_rate_low: Math.round(HEART_RATE_THRESHOLD * (workoutStep.l / 100)),
                     duration_time: workoutStep.s
                 };
             });
