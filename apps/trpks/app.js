@@ -27,7 +27,7 @@ App.prototype.getWorkout = function () {
             if (msg.title !== 'BangleDumpWorkout') {
                 return;
             }
-	    require('Storage').open('egcmsg.txt', 'a').write(JSON.stringify(msg));
+            require('Storage').open('egcmsg.txt', 'a').write(JSON.stringify(msg));
             // // Stops messages app from loading and buzzing
             msg.handled = true;
             body = JSON.parse(msg.body);
